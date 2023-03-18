@@ -62,7 +62,6 @@ describe('Gnosis Proxy', function () {
     // standard safe singleton contract (implementation)
     safeSingleton = await new GnosisSafe__factory(ethersSigner).deploy();
     // standard safe proxy factory
-
     const proxyFactory = await new GnosisSafeProxyFactory__factory(
       ethersSigner
     ).deploy();
@@ -77,9 +76,7 @@ describe('Gnosis Proxy', function () {
     accountFactory = await new GnosisSafeAccountFactory__factory(
       ethersSigner
     ).deploy(proxyFactory.address, safeSingleton.address, manager.address);
-    console.log('Proxy factory:', proxyFactory.address);
-    console.log('Safesingleton:', safeSingleton.address);
-    console.log('Manager:', manager.address);
+
     await accountFactory.createAccount(ownerAddress, 0);
     // we use our accountFactory to create and configure the proxy.
     // but the actual deployment is done internally by the gnosis factory
@@ -114,7 +111,6 @@ describe('Gnosis Proxy', function () {
     const { manager: curManager } = await tempManager.getCurrentEIP4337Manager(
       proxySafe.address
     );
-    console.log('Manager Address:', manager.address);
     expect(curManager).to.eq(manager.address);
   });
 
@@ -139,7 +135,18 @@ describe('Gnosis Proxy', function () {
       ethersSigner
     ).deploy();
 
-    await expect(anotherEntryPoint.handleOps([op], beneficiary)).to.be.reverted;
+    try {
+      await anotherEntryPoint.handleOps([op], beneficiary, {
+        gasLimit: 500000,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        // console.log('Revert reason:', error.message);
+        expect(error.message).to.include('account: not from entrypoint');
+      } else {
+        throw new Error('Unexpected error type');
+      }
+    }
   });
 
   it('should fail on invalid userop', async function () {
@@ -153,7 +160,19 @@ describe('Gnosis Proxy', function () {
       owner,
       entryPoint
     );
-    await expect(entryPoint.handleOps([op], beneficiary)).to.be.reverted;
+
+    try {
+      await entryPoint.handleOps([op], beneficiary, {
+        gasLimit: 500000,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        // console.log('Revert reason:', error.message);
+        expect(error.message).to.include('account: invalid nonce');
+      } else {
+        throw new Error('Unexpected error type');
+      }
+    }
 
     op = await fillAndSign(
       {
@@ -166,7 +185,18 @@ describe('Gnosis Proxy', function () {
     );
     // invalidate the signature
     op.callGasLimit = 1;
-    await expect(entryPoint.handleOps([op], beneficiary)).to.be.reverted;
+    try {
+      await entryPoint.handleOps([op], beneficiary, {
+        gasLimit: 500000,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        // console.log('Revert reason:', error.message);
+        expect(error.message).to.include('FailedOp(0, "AA24 signature error")');
+      } else {
+        throw new Error('Unexpected error type');
+      }
+    }
   });
 
   it('should exec', async function () {

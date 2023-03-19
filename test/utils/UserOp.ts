@@ -11,9 +11,9 @@ import {
   toRpcSig,
   keccak256 as keccak256_buffer,
 } from 'ethereumjs-util';
-import { EntryPoint } from '../typechain-types';
+import { EntryPoint } from '../../typechain-types';
 import { UserOperation } from './UserOperation';
-import { Create2Factory } from '../src/Create2Factory';
+import { Create2Factory } from '../../src/Create2Factory';
 
 function encode(
   typevalues: Array<{ type: string; val: any }>,

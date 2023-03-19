@@ -24,8 +24,8 @@ import {
   getBalance,
   HashZero,
   isDeployed,
-} from './testutils';
-import { fillAndSign } from './UserOp';
+} from './utils/testutils';
+import { fillAndSign } from './utils/UserOp';
 import {
   defaultAbiCoder,
   hexConcat,
@@ -111,6 +111,7 @@ describe('Gnosis Proxy', function () {
     const { manager: curManager } = await tempManager.getCurrentEIP4337Manager(
       proxySafe.address
     );
+    console.log('Current Manager:', curManager);
     expect(curManager).to.eq(manager.address);
   });
 
@@ -217,6 +218,8 @@ describe('Gnosis Proxy', function () {
     const ev = rcpt.events!.find((ev) => ev.event === 'UserOperationEvent')!;
     expect(ev.args!.success).to.eq(true);
     expect(await getBalance(beneficiary)).to.eq(ev.args!.actualGasCost);
+
+    console.log('New value of counter:', await counter.counters(proxy.address));
   });
 
   it('should revert with reason', async function () {
@@ -427,6 +430,7 @@ describe('Gnosis Proxy', function () {
       const { manager: curManager } = await manager.getCurrentEIP4337Manager(
         proxySafe.address
       );
+      console.log('New Manager:', curManager);
       expect(curManager).to.eq(newManager.address);
     });
   });

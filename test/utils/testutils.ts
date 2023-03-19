@@ -12,10 +12,10 @@ import {
   EntryPoint,
   EntryPoint__factory,
   IEntryPoint,
-} from '../typechain-types';
+} from '../../typechain-types';
 import { BytesLike } from '@ethersproject/bytes';
 import { expect } from 'chai';
-import { Create2Factory } from '../src/Create2Factory';
+import { Create2Factory } from '../../src/Create2Factory';
 import { debugTransaction } from './debugTx';
 import { UserOperation } from './UserOperation';
 

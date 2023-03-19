@@ -1,4 +1,4 @@
-import './aa.init';
+import './init/aa.init';
 import { ethers } from 'hardhat';
 import { Signer } from 'ethers';
 import {
@@ -31,6 +31,7 @@ import {
   hexConcat,
   hexZeroPad,
   parseEther,
+  formatEther,
 } from 'ethers/lib/utils';
 import { expect } from 'chai';
 
@@ -220,6 +221,56 @@ describe('Gnosis Proxy', function () {
     expect(await getBalance(beneficiary)).to.eq(ev.args!.actualGasCost);
 
     console.log('New value of counter:', await counter.counters(proxy.address));
+  });
+
+  it('should exec batch transaction', async function () {
+    const counter_countCallData = counter.interface.encodeFunctionData('count');
+    const safe_execTxCallData1 = manager.interface.encodeFunctionData(
+      'executeAndRevert',
+      [counter.address, 0, counter_countCallData, 0]
+    );
+    const safe_execTxCallData2 = manager.interface.encodeFunctionData(
+      'executeAndRevert',
+      [counter.address, 0, counter_countCallData, 0]
+    );
+
+    const op1 = await fillAndSign(
+      {
+        sender: proxy.address,
+        nonce: 1,
+        callGasLimit: 1e6,
+        callData: safe_execTxCallData1,
+      },
+      owner,
+      entryPoint
+    );
+
+    const op2 = await fillAndSign(
+      {
+        sender: proxy.address,
+        nonce: 2,
+        callGasLimit: 1e6,
+        callData: safe_execTxCallData2,
+      },
+      owner,
+      entryPoint
+    );
+
+    const gasLimit = 10000000;
+
+    const rcpt = await entryPoint
+      .handleOps([op1, op2], beneficiary, { gasLimit })
+      .then(async (r) => r.wait());
+    console.log('gasUsed=', rcpt.gasUsed, rcpt.transactionHash);
+
+    const ev = rcpt.events!.find((ev) => ev.event === 'UserOperationEvent')!;
+    expect(ev.args!.success).to.eq(true);
+    // expect(await getBalance(beneficiary)).to.eq(ev.args!.actualGasCost);
+
+    console.log('New value of counter:', await counter.counters(proxy.address));
+
+    // Check if the counter has been incremented twice
+    expect(await counter.counters(proxy.address)).to.eq(3);
   });
 
   it('should revert with reason', async function () {
